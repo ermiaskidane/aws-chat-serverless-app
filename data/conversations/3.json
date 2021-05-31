@@ -1,0 +1,11 @@
+{
+    "id": "3",
+    "participants": ["Student", "Ermias"],
+    "messages": [
+      {
+        "sender": "Ermias",
+        "time": 1512246299199,
+        "message": "hello! I'm ermias, one of your student. I'm excited to learn this serverless course"
+      }
+    ]
+  }
