@@ -1,6 +1,6 @@
 var ChatApp = window.ChatApp || {};
 
-(function scopeWrapper($) { 
+(function scopeWrapper($) {
 
     var currentUsername = 'Student';
 
@@ -80,6 +80,23 @@ var ChatApp = window.ChatApp || {};
                 ChatApp.loadChat();
             });
 
+    };
+
+    ChatApp.populatePeople = function () {
+        apiClient.usersGet({}, null, {})
+            .then(function (result) {
+                result.data.forEach(function (name) {
+                    var button = $('<button class="btn btn-primary">Start Chat</button>');
+
+                    var row = $('<tr>');
+                    row.append('<td>' + name + '</td>');
+                    var cell = $('<td>');
+                    cell.append(button);
+                    row.append(cell);
+                    $('TBODY').append(row);
+                });
+                $('TBODY').append('<tr><td></td><td></td></tr>');
+            });
     };
 
 }(jQuery));
