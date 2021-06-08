@@ -98,5 +98,12 @@ var ChatApp = window.ChatApp || {};
                 $('TBODY').append('<tr><td></td><td></td></tr>');
             });
     };
+    
+        ChatApp.startChat = function (name) {
+        apiClient.conversationsPost({}, [name], {})
+            .then(function (result) {
+                window.location = '/chat.html#' + result.data;
+            });
+    };
 
 }(jQuery));
