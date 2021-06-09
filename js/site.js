@@ -2,11 +2,55 @@ var ChatApp = window.ChatApp || {};
 
 (function scopeWrapper($) {
 
+    var userPool = new AmazonCognitoIdentity.CognitoUserPool(poolData);
+
     var currentUsername = 'Student';
 
     var lastChat = null;
 
     var apiClient = apigClientFactory.newClient();
+
+    ChatApp.checkLogin = function (redirectOnRec, redirectOnUnrec) {
+        var cognitoUser = userPool.getCurrentUser();
+        if (cognitoUser !== null) {
+            if (redirectOnRec) {
+                window.location = '/chats.html';
+            }
+        } else {
+            if (redirectOnUnrec) {
+                window.location = '/';
+            }
+        }
+    };
+
+    ChatApp.login = function () {
+        var username = $('#username').val();
+        var authenticationData = {
+            Username: username,
+            Password: $('#password').val()
+        };
+
+        var authenticationDetails = new AmazonCognitoIdentity.AuthenticationDetails(authenticationData);
+        var userData = {
+            Username: username,
+            Pool: userPool
+        };
+        var cognitoUser = new AmazonCognitoIdentity.CognitoUser(userData);
+        cognitoUser.authenticateUser(authenticationDetails, {
+            onSuccess: function () {
+                window.location = '/chats.html';
+            },
+            onFailure: function (err) {
+                alert(err);
+            }
+        });
+    };
+
+    ChatApp.logout = function () {
+        var cognitoUser = userPool.getCurrentUser();
+        cognitoUser.signOut();
+        window.location = '/';
+    };
 
     ChatApp.populateChats = function () {
         apiClient.conversationsGet({}, null, {})
@@ -87,6 +131,9 @@ var ChatApp = window.ChatApp || {};
             .then(function (result) {
                 result.data.forEach(function (name) {
                     var button = $('<button class="btn btn-primary">Start Chat</button>');
+                    button.on('click', function() {
+                        ChatApp.startChat(name);
+                    });
 
                     var row = $('<tr>');
                     row.append('<td>' + name + '</td>');
@@ -98,12 +145,57 @@ var ChatApp = window.ChatApp || {};
                 $('TBODY').append('<tr><td></td><td></td></tr>');
             });
     };
-    
-        ChatApp.startChat = function (name) {
+
+    ChatApp.startChat = function (name) {
         apiClient.conversationsPost({}, [name], {})
             .then(function (result) {
                 window.location = '/chat.html#' + result.data;
             });
+    };
+
+    ChatApp.signup = function () {
+        var username = $('#username').val();
+        var password = $('#password').val();
+        var email = new AmazonCognitoIdentity.CognitoUserAttribute({
+            Name: 'email',
+            Value: $('#email').val()
+        });
+
+        userPool.signUp(username, password, [email], null, function (err, result) {
+            if (err) {
+                alert(err);
+            } else {
+                window.location = '/confirm.html#' + username;
+            }
+        });
+    };
+
+    ChatApp.confirm = function () {
+        var username = location.hash.substring(1);
+        var cognitoUser = new AmazonCognitoIdentity.CognitoUser({
+            Username: username,
+            Pool: userPool
+        });
+        cognitoUser.confirmRegistration($('#code').val(), true, function (err, results) {
+            if (err) {
+                alert(err);
+            } else {
+                window.location = '/';
+            }
+        });
+    };
+
+    ChatApp.resend = function () {
+        var username = location.hash.substring(1);
+        var cognitoUser = new AmazonCognitoIdentity.CognitoUser({
+            Username: username,
+            Pool: userPool
+        });
+        cognitoUser.resendConfirmationCode(function (err) {
+            if (err) {
+                alert(err);
+            }
+        })
     };
 
 }(jQuery));
